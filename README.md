@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/mcrauwel/proxysql-graphite-exporter.svg?branch=master)](https://travis-ci.org/mcrauwel/proxysql-graphite-exporter)
 
-This software will connect to your ProxySQL instance(s), collects metrics and exports these to Graphite.
+This software will connect to a [ProxySQL](https://github.com/sysown/proxysql) instance, collects metrics and exports these to Graphite.
 
 This check was written by Matthias Crauwels <matthias.crauwels@UGent.be> at Ghent University. It is published with an [MIT license](LICENSE)
 
