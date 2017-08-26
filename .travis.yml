@@ -4,3 +4,11 @@ os:
 - linux
 install: go get
 script: go build -o proxysql-graphite-exporter
+deploy:
+  skip_cleanup: true
+  provider: releases
+  api_key:
+    secure: YLhHU/miCgJuFTjzoVOcon2I31fr7kTggExmRi5eprQcEVjEJPDj8Im/V51BL94WWipcqJsk0odXVa/I5oRXfOhk8u3Rs2e3StmLhCTtVJXa36cavKZI0bEtrz2Okfc8WWcZLaPehimHXCGW29yf5RhGx/keSAEGeVAt06L2NdyIAXe4idY00679J0zCZJdvj+zM1SXD74hZvIxqmtBYxgd0B3jBEsWsO3l95uRwK0vdXTbhl5GfdErrkkHdF2IyvyMe98jducG4GjdExDnKRdZs6rtieVBlxJ7L8h5ZNMpkNoLUCamdcnv+n0MZ5dixzjw9n+d9ezfn8PedUYe74jIQ4Ntya5QZr5gU3zhk85Qq6nVNFIv+PyUPfyq8o4/reIzVEMowv5O3oRDpGA41osil1W2VK7SiCFZRhU7ghlMIuck7uW7543LogWpRLX6CHnfTuSyIh9D2bVbtie2aoc4TdJpbYz2ZqQccQPzYSxM0ProcAFfNT6AL2dIxWihaMyuUhciX1c11Wi/QkRfK6a6Ql7Eyd3m/ao81Z9eaR4QXKfGmOKSYFswl856TNk6NuSNk/eHMS2JI3PAhz9oR9CDggDDnL0afxD9Yq6+NJhqrYtz0s0aeRK0P1El/C6NSFy9P+eAlFaGMpx3afDf5U0Ya4YQtN3bln9s8ua5u27c=
+  file: $TRAVIS_BUILD_DIR/proxysql-graphite-exporter
+  on:
+    tags: true
