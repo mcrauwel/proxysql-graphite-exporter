@@ -1,0 +1,6 @@
+language: go
+go: 1.8
+os:
+- linux
+install: go get
+script: go build -o proxysql-graphite-exporter
