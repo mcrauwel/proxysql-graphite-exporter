@@ -54,7 +54,6 @@ func main() {
 	parser.Usage = "[OPTIONS]"
 	_, err := parser.Parse()
 	if err != nil {
-		log.Printf("Error: %s", err)
 		os.Exit(1)
 	}
 
