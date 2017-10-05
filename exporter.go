@@ -22,6 +22,7 @@ type Options struct {
 
 	GlobalStats   bool `short:"g" long:"global" description:"Collect global stats"`
 	ConnPoolStats bool `short:"c" long:"connpool" description:"Collect connection pool stats"`
+	CommandStats  bool `short:"C" long:"commands" description:"Collect command stats"`
 }
 
 var options Options
@@ -50,6 +51,23 @@ var proxysql_connection_pool_metrics = map[string]string{
 	"latency_us":      "Gauge",
 }
 
+var proxysql_commands_counters = map[string]string{
+    "total_time_us":  "Counter",
+    "total_cnt":      "Counter",
+    "cnt_100us":      "Counter",
+    "cnt_500us":      "Counter",
+    "cnt_1ms":        "Counter",
+    "cnt_5ms":        "Counter",
+    "cnt_10ms":       "Counter",
+    "cnt_50ms":       "Counter",
+    "cnt_100ms":      "Counter",
+    "cnt_500ms":      "Counter",
+    "cnt_1s":         "Counter",
+    "cnt_5s":         "Counter",
+    "cnt_10s":        "Counter",
+    "cnt_INFs":       "Counter",
+}
+
 func main() {
 	parser.Usage = "[OPTIONS]"
 	_, err := parser.Parse()
@@ -71,6 +89,11 @@ func main() {
 	if options.ConnPoolStats {
 		connPoolMetrics := getConnectionPoolStats(proxysql, timestamp)
 		graphite_conn.SendMetrics(connPoolMetrics)
+	}
+
+	if options.CommandStats {
+		statusMetrics := getCommandsCounters(proxysql, timestamp)
+		graphite_conn.SendMetrics(statusMetrics)
 	}
 }
 
@@ -97,6 +120,28 @@ func getGlobalStats(db *sql.DB, timestamp int64) []graphite.Metric {
 		metric := graphite.NewMetric(graphite_key, graphite_value, timestamp)
 		metrics = append(metrics, metric)
 
+	}
+	return metrics
+}
+
+func getCommandsCounters(db *sql.DB, timestamp int64) []graphite.Metric {
+	var metrics []graphite.Metric
+
+	data := executeQuery(db, "SELECT Command, Total_Time_us, Total_cnt, cnt_100us, cnt_500us, cnt_1ms, cnt_5ms, cnt_10ms, cnt_50ms, cnt_100ms, cnt_500ms cnt_1s, cnt_5s, cnt_10s, cnt_INFs from stats_mysql_commands_counters");
+	for _, row := range data {
+		var command string
+		command = row["Command"]
+		for key, value := range row {
+			key = strings.ToLower(key)
+			value_type, ok := proxysql_commands_counters[key]
+			if !ok {
+				continue
+			}
+			graphite_key := fmt.Sprintf("command_counters.%s.%s-%s", command,key, value_type)
+			graphite_value := fmt.Sprintf("%s", value)
+			metric := graphite.NewMetric(graphite_key, graphite_value, timestamp);
+			metrics = append(metrics,metric)
+		}
 	}
 	return metrics
 }
