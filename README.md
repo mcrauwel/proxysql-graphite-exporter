@@ -20,7 +20,8 @@ Application Options:
  -d, --dsn=      ProxySQL admin DSN (default: stats:stats@tcp(localhost:6032)/)
  -g, --global    Collect global stats
  -c, --connpool  Collect connection pool stats
-
+ -C, --commands  Collect command stats
+ 
 Help Options:
  -h, --help      Show this help message
 ```
