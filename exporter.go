@@ -18,6 +18,7 @@ type Options struct {
 	GraphiteHost     string `short:"h" long:"host" default:"localhost" description:"Graphite hostname"`
 	GraphitePort     int    `short:"p" long:"port" default:"2003" description:"Graphite port"`
 	GraphiteProtocol string `short:"P" long:"protocol" default:"tcp" description:"Graphite protocol"`
+	GraphiteRetries  int    `short:"r" long:"retries" default:"3" description:"Number of time to retry connecting to Graphite"`
 	ProxySqlDSN      string `short:"d" long:"dsn" default:"stats:stats@tcp(localhost:6032)/" description:"ProxySQL admin DSN"`
 
 	GlobalStats   bool `short:"g" long:"global" description:"Collect global stats"`
@@ -75,7 +76,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	graphite_conn := connectToGraphite(options.GraphiteHost, options.GraphitePort, options.GraphiteProtocol, "proxysql")
+	if !options.GlobalStats && !options.ConnPoolStats && !options.CommandStats {
+		fmt.Println("Nothing to collect, exiting...")
+		os.Exit(0)
+	}
+
+	graphite_conn := connectToGraphite(options.GraphiteHost, options.GraphitePort, options.GraphiteProtocol, options.GraphiteRetries, "proxysql")
 	proxysql := connectToProxySQL(options.ProxySqlDSN)
 
 	var timestamp = int64(time.Now().Unix())
@@ -194,21 +200,29 @@ func getConnectionPoolStats(db *sql.DB, timestamp int64) []graphite.Metric {
 	return metrics
 }
 
-func connectToGraphite(GraphiteHost string, GraphitePort int, GraphiteProtocol string, namespace string) *graphite.Graphite {
+func connectToGraphite(GraphiteHost string, GraphitePort int, GraphiteProtocol string, GraphiteRetries int, namespace string) *graphite.Graphite {
+	var graphite_conn *graphite.Graphite = nil
 	fqdn := strings.Replace(fqdn.Get(), ".", "_", -1)
 	graphite_namespace := fmt.Sprintf("%s.%s", namespace, fqdn)
 
-	graphite_conn, err := graphite.GraphiteFactory(GraphiteProtocol, GraphiteHost, GraphitePort, graphite_namespace)
-	if err != nil {
-		log.Printf("Error opening connection to Graphite: %s", err)
-		os.Exit(1)
+	for i := 1; i <= GraphiteRetries ; i++ {
+		graphite_conn, err := graphite.GraphiteFactory(GraphiteProtocol, GraphiteHost, GraphitePort, graphite_namespace)
+		if err == nil {
+			return graphite_conn
+		} else {
+			if i == 3 {
+				log.Printf("Error opening connection to Graphite: %s", err)
+				os.Exit(1)
+			}
+			time.Sleep(time.Second * time.Duration(5 * i))
+		}
 	}
 
 	return graphite_conn
 }
 
 func connectToProxySQL(DSN string) *sql.DB {
-	proxysql, err := sql.Open("mysql", options.ProxySqlDSN)
+	proxysql, err := sql.Open("mysql", DSN)
 	if err == nil {
 		err = proxysql.Ping()
 	}
